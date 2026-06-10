@@ -128,6 +128,32 @@ framework dependencies. PRs with adapters are welcome.
 Requires Python 3.10+. Optional: local Ollama with `bge-m3` for semantic embeddings
 (graceful lexical fallback without it).
 
+## Proof: swap the kernel, watch the behavior shift
+
+Same model (Claude Haiku), same question — *"Should I rewrite my 5-year-old app from
+scratch?"* — the only difference is the `kernel.ses.json` file:
+
+| | Kernel A — "Conservative" | Kernel B — "Radical" |
+|---|---|---|
+| Axioms | "Rewrites are almost always a mistake", "Incremental change beats revolution" | "Legacy is debt", "Bold rewrites create leverage; patches create museums" |
+| Answer | "**Not unless you have measured evidence**: quantified technical debt costs, migration risk analysis, ROI… refactor high-friction areas instead" | "**Rewrite if the codebase actively blocks your velocity**… you don't have enough *leverage* yet to justify the *bet*" |
+| Trace | `kernel: sha256:5629fec…` | `kernel: sha256:1951c3f…` |
+
+The decision threshold, the vocabulary and the frame shift with the snapshot — and every
+trace reports *which* constitution produced the answer. An honest finding worth stating:
+the kernel **steers** the CPU, it does not mind-wipe it. The model keeps its own trained
+priors; axioms modulate thresholds and framing, measurably and reproducibly. A kernel is
+a steering wheel, not a brain transplant — which is exactly what you want from a
+constitution.
+
+Try it yourself:
+
+```bash
+QCA_KERNEL=kernel_a.ses.json python3 scripts/qca_engine.py think "Should I rewrite my app?"
+QCA_KERNEL=kernel_b.ses.json python3 scripts/qca_engine.py think "Should I rewrite my app?"
+# compare the answers — and the kernel hash in each trace
+```
+
 ## Measured, not promised
 
 All numbers from real runs (see `AB_RESULTS.md`):
