@@ -1,15 +1,13 @@
-# SES — Semantic Energy System, snapshot format (v5.1, as implemented)
+# SES Partitura v5.1 — snapshot format (engine profile)
 
-SES is a serialization format for an agent's **identity and memory as verifiable data**.
-This document specifies exactly what `qca_engine.py` reads and writes, so that any
-implementation in any language can produce compatible snapshots.
+SES (Somatic-Exosomatic Serialization) is a format for an agent's **identity and memory
+as verifiable data**. This document summarizes the canonical v5.1 specification and
+states exactly how `qca_engine.py` implements it, including declared extensions.
 
-There are two snapshot types with different mutability rules:
+## The main axiom
 
-| Snapshot | File | Mutability | Role |
-|---|---|---|---|
-| **Kernel** | `kernel.ses.json` | immutable | constitution: who the agent is |
-| **State** | `snapshot.ses.json` | grows | biography: what the agent has lived |
+> **Kernel** answers *"how to think"*. **State** answers *"what to think about right now"*.
+> **COMBINED = Kernel + State** → a full cold-boot package.
 
 The separation is the core design decision: identity must not drift as a side effect
 of experience. The kernel changes only by a deliberate new snapshot — which produces
@@ -18,135 +16,160 @@ a new hash, making personality evolution *versioned* like code.
 **Why "fractal"**: the kernel is not a list of preferences — it is a small set of
 scale-invariant axioms. The same axioms are expected to resolve a one-line reply and
 a life-strategy decision alike; the constitution unfolds self-similarly at every scale
-of reasoning. That is why a kernel stays small (a handful of axioms, one attractor,
-a few guardrails) while the *state* graph may grow to thousands of nodes: the kernel
-is the generator, the state is what it generated and lived through.
+of reasoning. The kernel is the generator; the state is what it generated and lived through.
 
 ---
 
-## 1. Kernel snapshot (`FRACTAL_KERNEL`)
+## 1. Universal container (`.ses.json`)
 
 ```json
 {
   "initiator": "∮",
-  "schema_version": "SES v5.1",
-  "entity_id": "MyAgent",
-  "snapshot_type": "FRACTAL_KERNEL",
-  "meta": { "note": "free-form" },
-  "kernel": {
-    "fractal_seed": {
-      "Z_AXIOM": ["axiom 1", "axiom 2"],
-      "OMEGA_ATTRACTOR": "one-sentence long-term attractor",
-      "guardrails": ["rule that must never be broken"]
-    }
-  }
+  "schema_version": "5.1",
+  "entity_id": "stable_entity_id",
+  "snapshot_id": "ISO-8601 with timezone",
+  "snapshot_type": "FRACTAL_KERNEL | STATE_SNAPSHOT | COMBINED",
+  "meta": { },
+  "kernel": { },
+  "state": { }
 }
 ```
 
-### Reading rules
-- A reader MUST use the `kernel` object if present, else treat the whole document as the kernel.
-- `Z_AXIOM` (list of strings) — injected verbatim into every reasoning cycle as inviolable premises.
-- `OMEGA_ATTRACTOR` (string) — the agent's standing long-term orientation.
-- `guardrails` (list of strings) — hard behavioral constraints, injected after axioms.
-- A missing kernel file is valid: an agent without a constitution.
+Validity invariants:
+- `FRACTAL_KERNEL` ⇒ `kernel` required, `state` absent
+- `STATE_SNAPSHOT` ⇒ `state` required, `kernel` absent
+- `COMBINED` ⇒ both required
 
-### Writing rules
-- A kernel is written **by a human or a deliberate process only** — never by the
-  agent's own learning loop. That is the whole point.
-- Kernel identity hash: `sha256( canonical_json(kernel) )` (see §3). Implementations
-  SHOULD report this hash in every reasoning trace so the active constitution is auditable.
-
----
-
-## 2. State snapshot
+### Top-level `meta`
 
 ```json
 {
-  "body": {
-    "format": "SES_Partitura",
-    "version": "5.1",
-    "canonicalization": "SES_CANON_JSON_v1",
-    "snapshot_ts": "ISO-8601 UTC",
-    "nodes": [ <node>, ... ],
-    "edges": [ <edge>, ... ],
-    "affect": { ... }
+  "created_at": "ISO-8601", "created_by": "Operator | System | Import",
+  "parent_snapshot_id": "previous_snapshot_id_or_null",
+  "kernel_ref": "kernel://entity@location", "kernel_hash": "sha256:...",
+  "hash": "sha256:...", "canonicalization": "SES_CANON_JSON_v1",
+  "notes": "...", "tags": []
+}
+```
+
+### The canon lock (§12 of the spec)
+
+> **Every STATE_SNAPSHOT must reference its Kernel** via `meta.kernel_ref` and/or
+> `meta.kernel_hash`. The biography must know which constitution lived it.
+> This is what makes a snapshot reproducible rather than "just pretty JSON".
+
+The engine enforces this: every exported state carries `kernel_hash` + `kernel_ref`
+whenever a kernel is present, and `verify` warns on states without the reference.
+`parent_snapshot_id` chains snapshots into an auditable lineage.
+
+---
+
+## 2. Kernel (FRACTAL_KERNEL)
+
+```json
+{
+  "fractal_seed": {
+    "Z_AXIOM": ["scale-invariant axioms"],
+    "OMEGA_ATTRACTOR": "one-sentence long-term attractor",
+    "guardrails": ["hard constraints"]
   },
-  "provenance": {
-    "hash": "sha256:<hex of canonical_json(body)>",
-    "engine": "<producer id>",
-    "emb_model": "<embedding model used>",
-    "created": "ISO-8601 UTC"
-  }
+  "recursive_function": [
+    { "id": "H0", "name": "Ingestion", "input": "...", "output": "...", "rules": ["..."] }
+  ],
+  "distortion_field": { "items": [
+    { "trigger": "...", "effect": "...", "severity": 0.7, "mitigation": ["..."], "examples": ["..."] }
+  ]},
+  "interfaces": { "inputs": [], "outputs": [], "tools_allowed": [] }
+}
+```
+
+- `fractal_seed`, `recursive_function`, `distortion_field` are required; steps are
+  **objects, not strings** (v5.1).
+- A kernel is written **by a human or a deliberate process only** — never by the
+  agent's own learning loop.
+- `kernel_hash = sha256(canonical_json(kernel))`. The engine reports it in every
+  reasoning trace, and injects **all three sections** into every cycle: axioms +
+  guardrails, the reasoning protocol, and known distortions with mitigations
+  (the agent is told its own failure modes so it can self-correct).
+
+## 3. State
+
+```json
+{
+  "meta": { "trigger": "user_input | scheduled | import | inference",
+            "summary": "...", "provenance": { } },
+  "nodes": [ ], "edges": [ ]
 }
 ```
 
 ### Node
+
 ```json
-{
-  "id": "N42",
-  "_text": "the memory content, human-readable",
-  "layer": "CORE | GOAL | CONTEXT | EPISODIC",
-  "ts": "ISO-8601 UTC",
-  "meta": {
-    "role": "user | assistant | system",
-    "status": "active | archived",
-    "salience": 0.5,
-    "kind": "lesson | abstraction | pulse | ... (optional)"
-  }
-}
+{ "id": "n01", "label": "content", "glyph": "Ψ (optional)",
+  "layer": "CORE | CONTEXT | EPISODIC | MEMORY | GOAL",
+  "meta": { "provenance": { }, "salience": 0.9, "status": "active | dormant | archived", "tags": [] } }
 ```
 
-Layer semantics (writing rules):
-- `CORE` — distilled knowledge: operator decisions, lessons, consolidated abstractions.
-  Never auto-archived.
-- `GOAL` — active intentions; drive autonomous behavior.
-- `CONTEXT` — accepted thoughts of medium/high quality.
-- `EPISODIC` — raw exchanges; subject to decay and nightly consolidation
-  (clusters of ≥3 episodic nodes with pairwise cosine > 0.65 are abstracted into one
-  CORE node, originals archived).
+`id`, `label`, `layer`, `meta.provenance` are **required**.
 
-Embeddings are **not** part of the snapshot body (they are model-specific cache);
-the embedding model is recorded in provenance instead.
+Layer semantics as the engine writes them: `CORE` — distilled knowledge (operator
+decisions, lessons, consolidated abstractions; never auto-archived), `GOAL` — active
+intentions driving autonomous behavior, `CONTEXT` — accepted thoughts, `EPISODIC` —
+raw exchanges (subject to nightly consolidation: clusters of ≥3 with pairwise
+cosine > 0.65 → one CORE abstraction, originals archived).
 
 ### Edge
+
 ```json
-{ "id": "E17", "source": "N42", "target": "N7", "relation": "SUPPORTS", "sim": 0.71 }
+{ "id": "e01", "source": "n02", "target": "n01",
+  "relation": "SUPPORTS | CAUSES | DEPENDS_ON | CONTRADICTS | REFINES | ASSOCIATED",
+  "meta": { "provenance": { }, "weight": 0.71 } }
 ```
 
-Relations and the thresholds that create them (cosine of L2-normalized embeddings):
+`source`, `target`, `relation`, `meta.provenance` are **required**. The engine sets
+`weight` from embedding cosine and creates edges by thresholds (calibrated for bge-m3):
+SUPPORTS > 0.65, REFINES 0.50–0.65, CONTRADICTS 0.50–0.65 + negation markers,
+ASSOCIATED 0.35–0.50 (and as the guaranteed fallback edge).
 
-| Relation | Rule |
-|---|---|
-| `SUPPORTS` | sim > 0.65 |
-| `REFINES` | 0.50 < sim ≤ 0.65 |
-| `CONTRADICTS` | 0.50 < sim ≤ 0.65 **and** strong negation markers in the new text |
-| `ASSOCIATED` | 0.35 < sim ≤ 0.50; also the fallback edge — every node gets at least one edge to its nearest neighbor |
+### Provenance (required on every node and edge)
 
-Thresholds above are calibrated for `bge-m3` (1024d). Recalibrate per embedding model;
-record the model in provenance.
+```json
+{ "source": "GENESIS | OPERATOR | QCA_CYCLE | IMPORT | INFERENCE",
+  "stage": "H0..H9 | E1 | BOOT", "timestamp": "ISO-8601",
+  "source_ref": [], "confidence": 1.0 }
+```
+
+`confidence`: 1.0 = fact/canon, 0.5 = plausible reconstruction, 0.2 = hypothesis.
 
 ---
 
-## 3. Canonicalization & integrity (`SES_CANON_JSON_v1`)
+## 4. Canonicalization & hashes (`SES_CANON_JSON_v1`)
 
-```
-canonical_json(x) = JSON serialization with:
-  - keys sorted lexicographically at every level
-  - separators "," and ":" (no whitespace)
-  - UTF-8, non-ASCII NOT escaped (ensure_ascii=false)
-```
+- Object keys sorted lexicographically; compact separators; UTF-8 not escaped.
+- `nodes` sorted by `id`; `edges` sorted by `id`, else by `(source, target, relation)`.
+- Timestamps ISO-8601.
+- `meta.hash` = SHA-256 of the canonical JSON of the whole snapshot, computed with
+  `meta.hash` itself absent. `meta.kernel_hash` = SHA-256 of the canonical kernel only.
 
-`provenance.hash = "sha256:" + hex( SHA-256( canonical_json(body) ) )`
-
-Verification: recompute over `body`, compare with `provenance.hash`. Any single-character
-change in any node fails verification. The hash certifies **integrity** (the snapshot
-was not tampered with), not truth.
+Verification: recompute, compare. Any single-character change fails loudly. The hash
+certifies **integrity** (not tampered), not truth.
 
 ---
 
-## 4. Compatibility notes
+## 5. Engine extensions (declared, `x_`-prefixed)
 
-- Unknown fields MUST be preserved on read-modify-write (forward compatibility).
-- Unknown layers (e.g. `MEMORY`, `WORKING` from richer implementations) MUST be
-  carried through verbatim.
-- A reader MUST treat `meta.status == "archived"` nodes as invisible to recall.
+The engine adds one extension field, ignored by canonical readers:
+
+- `state.meta.x_neuro` — the neurochemical state at snapshot time
+  (`dopamine`, `pain`, `adrenaline`, `serotonin`).
+
+Internal working storage (`graph.json`) is private to the engine and not part of the
+format; SES snapshots are the interchange and provenance layer.
+
+## 6. Compatibility rules
+
+- Unknown fields MUST be preserved on read-modify-write.
+- Unknown layers (e.g. `WORKING` from richer implementations) MUST be carried through.
+- Nodes with `status: "archived"` are invisible to recall.
+- Legacy snapshots (pre-canonical `body`/`provenance` wrapper) are still verifiable
+  by `ses_bridge.py verify`, which detects the format automatically.
