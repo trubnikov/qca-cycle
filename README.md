@@ -165,6 +165,9 @@ All numbers from real runs (see `AB_RESULTS.md`):
   inside QCA — "No, we already decided this". Intelligence unchanged; relevance transformed.
 - **Novelty gate**: exact repeat → cosine 0.987 → discarded, not written, dopamine drops.
 - **Tamper test**: one character changed in a snapshot → SES verify fails loudly.
+- **Format compliance**: exported snapshots validate against the canonical SES Partitura
+  v5.1 JSON Schema with zero errors, including the §12 canon lock (every state
+  cryptographically references its kernel) and snapshot lineage.
 
 ## What's in the box
 
