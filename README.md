@@ -74,6 +74,11 @@ skills/cognitive/qca-cycle/
 
 Pure stdlib, ~600 lines total. MIT license.
 
+## Specifications
+
+- [SES_SPEC.md](docs/SES_SPEC.md) — the snapshot format: kernel vs state, nodes/edges, canonicalization, integrity
+- [QCA_SPEC.md](docs/QCA_SPEC.md) — the reasoning cycle: stages, thresholds, neurochemistry, autonomous mode
+
 ## Lineage
 
 Ocean (2025) → OsGen v2 multi-entity field → this port (2026).
