@@ -15,6 +15,13 @@ The separation is the core design decision: identity must not drift as a side ef
 of experience. The kernel changes only by a deliberate new snapshot — which produces
 a new hash, making personality evolution *versioned* like code.
 
+**Why "fractal"**: the kernel is not a list of preferences — it is a small set of
+scale-invariant axioms. The same axioms are expected to resolve a one-line reply and
+a life-strategy decision alike; the constitution unfolds self-similarly at every scale
+of reasoning. That is why a kernel stays small (a handful of axioms, one attractor,
+a few guardrails) while the *state* graph may grow to thousands of nodes: the kernel
+is the generator, the state is what it generated and lived through.
+
 ---
 
 ## 1. Kernel snapshot (`FRACTAL_KERNEL`)
