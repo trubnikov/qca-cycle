@@ -32,6 +32,72 @@ Architecture principle: *the LLM is a black-box CPU; every decision that matters
 what to recall, what to write, what to discard, when to speak — is made by auditable
 deterministic code on top of it.*
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph IDENTITY["SES — identity as data"]
+        K["FRACTAL KERNEL<br/>kernel.ses.json<br/>axioms + attractor + guardrails<br/>🔒 immutable, SHA-256 signed"]
+        G["STATE GRAPH<br/>graph.json<br/>typed nodes & edges<br/>🌱 grows with every exchange"]
+        N["NEURO STATE<br/>dopamine / pain / adrenaline / serotonin<br/>⏳ decays in real time, persists between sessions"]
+    end
+
+    subgraph CYCLE["QCA — deterministic reasoning cycle (auditable code)"]
+        Q["recall → contradiction check → synthesis →<br/>critique → novelty gate → write/discard"]
+    end
+
+    subgraph CPU["LLM = swappable CPU"]
+        L1["Claude"]
+        L2["Ollama / local"]
+        L3["GPT / any API"]
+        L4["mock (tests)"]
+    end
+
+    subgraph FRONT["any front-end"]
+        F1["CLI"]
+        F2["Hermes skill"]
+        F3["Telegram bot"]
+        F4["cron daemons<br/>(pulse / sleep)"]
+    end
+
+    K -- "constitution injected<br/>into every cycle" --> Q
+    G <-- "recall / write" --> Q
+    N <-- "signals / prompt frame" --> Q
+    Q -- "synthesize, critique<br/>(text in, text out)" --> CPU
+    FRONT --> Q
+
+    style K fill:#1a3a5c,stroke:#4a9eda,color:#fff
+    style G fill:#1d4d36,stroke:#3dbb7d,color:#fff
+    style N fill:#5c3a1a,stroke:#da9e4a,color:#fff
+    style Q fill:#3d2a5c,stroke:#9a6ad8,color:#fff
+```
+
+**The key property**: swap anything in the CPU box — the personality (kernel), the biography
+(graph) and the mood (neuro state) stay exactly where they were. Identity survives the model.
+
+### Inside one thinking cycle
+
+```mermaid
+flowchart TD
+    H0["H0 stimulus"] --> H2["H2 RECALL<br/>cosine top-k over graph<br/>⚙️ code"]
+    H2 --> H3["H3 CONTRADICTION<br/>CONTRADICTS edges around recalled nodes<br/>⚙️ code"]
+    H3 --> H4["H4 SYNTHESIS<br/>kernel axioms + recalled context + neuro frame<br/>🤖 LLM"]
+    H4 --> H5["H5 CRITIQUE<br/>quality judgment<br/>🤖 LLM (advisory)"]
+    H5 --> H55{"H5.5 NOVELTY GATE<br/>max cosine vs whole graph<br/>⚙️ geometry — cannot be argued with"}
+    H55 -- "≥ 0.90 repeat" --> DISCARD["✂️ DISCARD<br/>nothing written<br/>dopamine ↓ pain ↑"]
+    H55 -- "< 0.82 novel" --> WRITE["H7 WRITE<br/>stimulus + thought → graph<br/>lesson → CORE<br/>dopamine ↑"]
+    H55 -- "between: refine" --> WRITE
+    WRITE --> H6["H6 NEUROCHEMISTRY<br/>events → signals → salience reweighting<br/>⚙️ code"]
+    DISCARD --> H6
+
+    style H55 fill:#5c1a1a,stroke:#d84a4a,color:#fff
+    style H4 fill:#3d3d3d,stroke:#888,color:#fff
+    style H5 fill:#3d3d3d,stroke:#888,color:#fff
+```
+
+⚙️ = deterministic code decides · 🤖 = LLM is called as a function. Only two boxes in the
+whole cycle are the LLM; every gate, threshold and write decision is auditable code.
+
 ## Quick start (standalone, no framework)
 
 ```bash
