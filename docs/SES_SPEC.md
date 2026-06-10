@@ -1,8 +1,10 @@
 # SES Partitura v5.1 — snapshot format (engine profile)
 
 SES (Somatic-Exosomatic Serialization) is a format for an agent's **identity and memory
-as verifiable data**. This document summarizes the canonical v5.1 specification and
-states exactly how `qca_engine.py` implements it, including declared extensions.
+as verifiable data**. The canonical specification, JSON Schema, examples and the Kernel
+Interview live at **[github.com/trubnikov/SES](https://github.com/trubnikov/SES)**.
+This document summarizes the spec and states exactly how `qca_engine.py` implements it,
+including declared extensions.
 
 ## The main axiom
 

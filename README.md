@@ -187,7 +187,10 @@ Pure stdlib, ~600 lines total. MIT license.
 
 ## Specifications
 
-- [SES_SPEC.md](docs/SES_SPEC.md) — the snapshot format: kernel vs state, nodes/edges, canonicalization, integrity
+- **[SES Partitura v5.1](https://github.com/trubnikov/SES)** — the canonical format
+  specification (JSON Schema, examples, and the [Kernel Interview](https://github.com/trubnikov/SES/blob/main/interview/KERNEL_INTERVIEW.md) —
+  how to extract a fractal kernel from a human). This engine is its reference implementation.
+- [SES_SPEC.md](docs/SES_SPEC.md) — the engine profile of the format: what exactly this implementation reads/writes, plus declared extensions
 - [QCA_SPEC.md](docs/QCA_SPEC.md) — the reasoning cycle: stages, thresholds, neurochemistry, autonomous mode
 
 ## Lineage
