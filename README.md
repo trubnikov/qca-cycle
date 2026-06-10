@@ -1,16 +1,27 @@
-# Ocean × Hermes — a portable cognitive layer
+# QCA + SES — a portable cognitive layer
 
 **Persistent identity and growing memory for any LLM agent. The LLM is a swappable CPU; the personality is your data.**
 
-This repository packages the cognitive core of [Ocean](https://github.com/trubnikov) — a personal
-cognitive agent built by Dima Trubnikov in 2025, a year before agent memory became an industry
-trend — as a single dependency-free skill for [Hermes Agent](https://github.com/NousResearch/hermes-agent).
+Two standalone, framework-independent pieces:
+
+- **[SES](docs/SES_SPEC.md)** — a snapshot format for identity-as-data: an immutable, SHA-256-signed
+  *fractal kernel* (the agent's constitution) plus a growing, typed graph memory (its biography).
+- **[QCA](docs/QCA_SPEC.md)** — a reasoning cycle where every decision that matters is made by
+  auditable deterministic code, and the LLM is called only as a replaceable CPU.
+
+The reference implementation (`qca_engine.py`, pure Python stdlib, zero dependencies) runs
+anywhere from the command line. Integrations are adapters on top — a
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) skill ships in this repo; nothing
+in the engine depends on Hermes.
+
+The architecture comes from **Ocean** — a personal cognitive agent built by Dima Trubnikov
+in 2025, a year before agent memory became an industry trend.
 
 ## The idea
 
 Popular agents conflate two things that must be separate:
 
-| | Mainstream agents | This skill |
+| | Mainstream agents | QCA + SES |
 |---|---|---|
 | Identity | dissolved in prompts & chat history, drifts silently | **immutable kernel** (axioms + guardrails), SHA-256 signed, injected into every cycle |
 | Memory | append-only logs or RAG that fills with duplicates | **typed graph** (SUPPORTS/REFINES/CONTRADICTS) + **incorruptible novelty gate**: repeats are discarded by embedding geometry, not by an LLM grading itself |
@@ -21,27 +32,32 @@ Architecture principle: *the LLM is a black-box CPU; every decision that matters
 what to recall, what to write, what to discard, when to speak — is made by auditable
 deterministic code on top of it.*
 
-## Quick start
+## Quick start (standalone, no framework)
 
 ```bash
-# copy the skill into Hermes
-cp -R skills/cognitive/qca-cycle ~/.hermes/skills/cognitive/
-
-# seed a project decision, then think
-export QCA_STORE=~/.hermes/qca/graph.json
-python3 ~/.hermes/skills/cognitive/qca-cycle/scripts/qca_engine.py \
+# seed a project decision, then think — plain CLI, no framework required
+export QCA_STORE=~/qca/graph.json
+python3 skills/cognitive/qca-cycle/scripts/qca_engine.py \
   seed "We decided NOT to cache decoded PCM audio — it eats memory" CORE
-python3 ~/.hermes/skills/cognitive/qca-cycle/scripts/qca_engine.py \
+python3 skills/cognitive/qca-cycle/scripts/qca_engine.py \
   think "Should we cache decoded audio?"
 # → "No — we already decided this: ..." (recalled, not guessed)
 
-# give it a personality
-cp skills/cognitive/qca-cycle/kernel.example.ses.json ~/.hermes/qca/kernel.ses.json
+# give it a personality (immutable, signed constitution)
+cp skills/cognitive/qca-cycle/kernel.example.ses.json ~/qca/kernel.ses.json
+```
 
-# wire the daemons (autonomous pulse + nightly memory consolidation)
+### Optional: run inside Hermes Agent
+
+```bash
+cp -R skills/cognitive/qca-cycle ~/.hermes/skills/cognitive/
+# daemons: autonomous pulse + nightly memory consolidation
 hermes cron create "every 3h"  --name ocean-pulse --script ocean_pulse.sh --no-agent
 hermes cron create "0 4 * * *" --name ocean-sleep --script ocean_sleep.sh --no-agent
 ```
+
+Any other agent framework (or a bare cron) can drive the same CLI — the engine has no
+framework dependencies. PRs with adapters are welcome.
 
 Requires Python 3.10+. Optional: local Ollama with `bge-m3` for semantic embeddings
 (graceful lexical fallback without it).
