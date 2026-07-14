@@ -572,6 +572,9 @@ def export_ses(g: Graph, path: str) -> dict:
     if kernel_hash:  # v5.1 canon lock: state must reference its kernel
         snap["meta"]["kernel_hash"] = kernel_hash
         snap["meta"]["kernel_ref"] = f"kernel://{entity_id}@{KERNEL_PATH}"
+    else:
+        print("⚠ no kernel installed — this STATE_SNAPSHOT will fail the "
+              "v5.1 canon-lock check in ses_bridge.py verify", file=sys.stderr)
     snap["meta"]["hash"] = _snapshot_hash(snap)
     json.dump(snap, open(path, "w"), ensure_ascii=False, indent=1)
     return {"hash": snap["meta"]["hash"], "snapshot_type": snap["snapshot_type"],
@@ -608,8 +611,11 @@ def main():
     elif cmd == "sleep":
         print(json.dumps(sleep_cycle(g), ensure_ascii=False, indent=1))
     elif cmd == "pulse":
+        # Silent-cron contract: deliberate silence = empty stdout, so a cron
+        # wrapper can gate delivery on "any output at all".
         out = pulse(g)
-        print(out if out else "SILENCE")
+        if out:
+            print(out)
     elif cmd == "soul":
         # Identity from the graph: CORE by salience + goals + neuro state.
         # Every generation is signed with the SES snapshot hash (change provenance).
