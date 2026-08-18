@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(gh auth *)",
+      "Bash(gh pr *)",
+      "Bash(ls -d .venv venv 2>/dev/null; ls ~/.hermes/hermes-agent/venv 2>/dev/null | head -1; python3 --version; grep -n \"requires-python\" pyproject.toml)",
+      "Bash(scripts/run_tests.sh tests/skills/test_qca_cycle_skill.py)",
+      "Bash(.venv/bin/ruff check *)",
+      "Bash(echo \"ruff exit: $?\")",
+      "Bash(scripts/run_tests.sh tests/skills/ tests/scripts/test_build_skills_index_health.py)",
+      "Bash(.venv/bin/ty check *)",
+      "Bash(git stash *)",
+      "Bash(awk '{print $2, $10, $11, $12, $13}')",
+      "Bash(scripts/run_tests.sh tests/acp/test_auth.py tests/agent/test_anthropic_adapter.py tests/gateway/test_gateway_shutdown.py tests/hermes_cli/test_gateway_service.py tests/tools/test_file_tools.py)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh api *)",
+      "Bash(gh repo *)"
+    ]
+  }
+}
